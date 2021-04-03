@@ -1,26 +1,26 @@
 <?php
 /**
-Komodo for WooCommerce
-https://github.com/KomodoPlatform/WooCommerce-KMD
+Spacecoin for WooCommerce
+https://github.com/SpaceWorksCo/WooCommerce-SPACE
  */
 
 //---------------------------------------------------------------------------
 // Global definitions
-if (!defined('KMD_PLUGIN_NAME'))
+if (!defined('SPACE_PLUGIN_NAME'))
   {
-  define('KMD_VERSION',           '1.0.0');
+  define('SPACE_VERSION',           '1.0.0');
 
   //-----------------------------------------------
-  define('KMD_EDITION',           'Standard');
+  define('SPACE_EDITION',           'Standard');
 
 
   //-----------------------------------------------
-  define('KMD_SETTINGS_NAME',     'KMD-Settings');
-  define('KMD_PLUGIN_NAME',       'Komodo for WooCommerce');
+  define('SPACE_SETTINGS_NAME',     'SPACE-Settings');
+  define('SPACE_PLUGIN_NAME',       'Spacecoin for WooCommerce');
 
 
   // i18n plugin domain for language files
-  define('KMD_I18N_DOMAIN',       'kmd');
+  define('SPACE_I18N_DOMAIN',       'space');
 
   if (extension_loaded('gmp') && !defined('USE_EXT'))
     define ('USE_EXT', 'GMP');
@@ -31,7 +31,7 @@ if (!defined('KMD_PLUGIN_NAME'))
 
 //------------------------------------------
 // Load wordpress for POSTback, WebHook and API pages that are called by external services directly.
-if (defined('KMD_MUST_LOAD_WP') && !defined('WP_USE_THEMES') && !defined('ABSPATH'))
+if (defined('SPACE_MUST_LOAD_WP') && !defined('WP_USE_THEMES') && !defined('ABSPATH'))
    {
    $g_blog_dir = preg_replace ('|(/+[^/]+){4}$|', '', str_replace ('\\', '/', __FILE__)); // For love of the art of regex-ing
    define('WP_USE_THEMES', false);
@@ -49,11 +49,11 @@ if (!class_exists('gmp_Utils')) require_once (dirname(__FILE__) . '/libs/util/gm
 if (!class_exists('CurveFp')) require_once (dirname(__FILE__) . '/libs/CurveFp.php');
 if (!class_exists('Point')) require_once (dirname(__FILE__) . '/libs/Point.php');
 if (!class_exists('NumberTheory')) require_once (dirname(__FILE__) . '/libs/NumberTheory.php');
-require_once (dirname(__FILE__) . '/libs/KMDElectroHelper.php');
+require_once (dirname(__FILE__) . '/libs/SPACEElectroHelper.php');
 
-require_once (dirname(__FILE__) . '/kmd-cron.php');
-require_once (dirname(__FILE__) . '/kmd-mpkgen.php');
-require_once (dirname(__FILE__) . '/kmd-utils.php');
-require_once (dirname(__FILE__) . '/kmd-admin.php');
-require_once (dirname(__FILE__) . '/kmd-render-settings.php');
-require_once (dirname(__FILE__) . '/kmd-komodo-gateway.php');
+require_once (dirname(__FILE__) . '/space-cron.php');
+require_once (dirname(__FILE__) . '/space-mpkgen.php');
+require_once (dirname(__FILE__) . '/space-utils.php');
+require_once (dirname(__FILE__) . '/space-admin.php');
+require_once (dirname(__FILE__) . '/space-render-settings.php');
+require_once (dirname(__FILE__) . '/space-spacecoin-gateway.php');

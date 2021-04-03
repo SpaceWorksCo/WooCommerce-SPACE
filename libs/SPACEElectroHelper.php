@@ -14,8 +14,8 @@ if ( !function_exists( 'hex2bin' ) )
         return $sbin;
     }
 }
-if (!class_exists('KMDElectroHelper')) {
-    class KMDElectroHelper
+if (!class_exists('SPACEElectroHelper')) {
+    class SPACEElectroHelper
     {
         const BITCOIN_HEADER_PUB = "0488b21e";
         const BIP32_PRIME = 0x80000000;

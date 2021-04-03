@@ -1,8 +1,8 @@
 <?php
 
 /**
-Komodo for WooCommerce
-https://github.com/KomodoPlatform/WooCommerce-KMD
+Spacecoin for WooCommerce
+https://github.com/SpaceWorksCo/WooCommerce-SPACE
  */
 
 //
@@ -18,35 +18,35 @@ https://github.com/KomodoPlatform/WooCommerce-KMD
 // base2dec needs to be written for gmp as phpecc is missing it
 
 //===========================================================================
-function KMD__MATH_generate_komodo_address_from_mpk_v1 ($master_public_key, $key_index)
+function SPACE__MATH_generate_spacecoin_address_from_mpk_v1 ($master_public_key, $key_index)
 {
-    return KMDElectroHelper::mpk_to_bc_address($master_public_key, $key_index, KMDElectroHelper::V1);
+    return SPACEElectroHelper::mpk_to_bc_address($master_public_key, $key_index, SPACEElectroHelper::V1);
 }
 //===========================================================================
 
 //===========================================================================
-function KMD__MATH_generate_komodo_address_from_mpk_v2 ($master_public_key, $key_index, $is_for_change = false)
+function SPACE__MATH_generate_spacecoin_address_from_mpk_v2 ($master_public_key, $key_index, $is_for_change = false)
 {
-    return KMDElectroHelper::mpk_to_bc_address($master_public_key, $key_index, KMDElectroHelper::V2, $is_for_change);
+    return SPACEElectroHelper::mpk_to_bc_address($master_public_key, $key_index, SPACEElectroHelper::V2, $is_for_change);
 }
 //===========================================================================
 
 //===========================================================================
-function KMD__MATH_generate_komodo_address_from_mpk ($master_public_key, $key_index, $is_for_change = false)
+function SPACE__MATH_generate_spacecoin_address_from_mpk ($master_public_key, $key_index, $is_for_change = false)
 {
 	if (USE_EXT != 'GMP' && USE_EXT != 'BCMATH')
   {
-      KMD__log_event (__FILE__, __LINE__, "Neither GMP nor BCMATH PHP math libraries are present. Aborting.");
+      SPACE__log_event (__FILE__, __LINE__, "Neither GMP nor BCMATH PHP math libraries are present. Aborting.");
 		return false;
   }
 
   if (preg_match ('/^[a-f0-9]{128}$/', $master_public_key))
-    return KMD__MATH_generate_komodo_address_from_mpk_v1 ($master_public_key, $key_index);
+    return SPACE__MATH_generate_spacecoin_address_from_mpk_v1 ($master_public_key, $key_index);
 
   if (preg_match ('/^xpub[a-zA-Z0-9]{107}$/', $master_public_key))
-    return KMD__MATH_generate_komodo_address_from_mpk_v2 ($master_public_key, $key_index, $is_for_change);
+    return SPACE__MATH_generate_spacecoin_address_from_mpk_v2 ($master_public_key, $key_index, $is_for_change);
 
-    KMD__log_event (__FILE__, __LINE__, "Invalid MPK passed: '$master_public_key'. Aborting.");
+    SPACE__log_event (__FILE__, __LINE__, "Invalid MPK passed: '$master_public_key'. Aborting.");
   return false;
 }
 //===========================================================================

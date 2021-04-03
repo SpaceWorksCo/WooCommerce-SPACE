@@ -1,25 +1,25 @@
 <?php
 /**
-Komodo for WooCommerce
-https://github.com/KomodoPlatform/WooCommerce-KMD
+Spacecoin for WooCommerce
+https://github.com/SpaceWorksCo/WooCommerce-SPACE
 */
 
-function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
+function SPACE__get_address_for_payment__electrum($electrum_mpk, $order_info)
 {
     global $wpdb;
 
     // status = "unused", "assigned", "used"
-    $kmd_addresses_table_name = $wpdb->prefix . 'kmd_addresses';
+    $space_addresses_table_name = $wpdb->prefix . 'space_addresses';
     $origin_id = $electrum_mpk;
 
-    $kmd_settings = KMD__get_settings();
-    $funds_received_value_expires_in_secs = $kmd_settings['funds_received_value_expires_in_mins'] * 60;
-    $assigned_address_expires_in_secs = $kmd_settings['assigned_address_expires_in_mins'] * 60;
+    $space_settings = SPACE__get_settings();
+    $funds_received_value_expires_in_secs = $space_settings['funds_received_value_expires_in_mins'] * 60;
+    $assigned_address_expires_in_secs = $space_settings['assigned_address_expires_in_mins'] * 60;
 
     $clean_address = NULL;
     $current_time = time();
 
-    if ($kmd_settings['reuse_expired_addresses']) {
+    if ($space_settings['reuse_expired_addresses']) {
         $reuse_expired_addresses_freshb_query_part =
             "OR (`status`='assigned'
       		AND (('$current_time' - `assigned_at`) > '$assigned_address_expires_in_secs')
@@ -37,7 +37,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
     //
     // Hence - any returned address will be clean to use.
     $query =
-        "SELECT `kmd_address` FROM `$kmd_addresses_table_name`
+        "SELECT `space_address` FROM `$space_addresses_table_name`
          WHERE `origin_id`='$origin_id'
          AND `total_received_funds`='0'
          AND (`status`='unused' $reuse_expired_addresses_freshb_query_part)
@@ -58,7 +58,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
         //    'assigned'  - expired with old zero balances (if 'reuse_expired_addresses' is true)
         //
         // Hence - any returned address with freshened balance==0 will be clean to use.
-        if ($kmd_settings['reuse_expired_addresses']) {
+        if ($space_settings['reuse_expired_addresses']) {
             $reuse_expired_addresses_oldb_query_part =
                 "OR (`status`='assigned'
 	      		AND (('$current_time' - `assigned_at`) > '$assigned_address_expires_in_secs')
@@ -68,7 +68,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
             $reuse_expired_addresses_oldb_query_part = "";
 
         $query =
-            "SELECT * FROM `$kmd_addresses_table_name`
+            "SELECT * FROM `$space_addresses_table_name`
             WHERE `origin_id`='$origin_id'
 	         	AND `total_received_funds`='0'
             AND (
@@ -86,20 +86,20 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
         //-------------------------------------------------------
         // Try to re-verify balances of existing addresses (with old or non-existing balances) before reverting to slow operation of generating new address.
         //
-        $komodo_api_failures = 0;
+        $spacecoin_api_failures = 0;
         foreach ($addresses_to_verify_for_zero_balances_rows as $address_to_verify_for_zero_balance_row) {
 
-            $address_to_verify_for_zero_balance = $address_to_verify_for_zero_balance_row['kmd_address'];
+            $address_to_verify_for_zero_balance = $address_to_verify_for_zero_balance_row['space_address'];
 
             $address_request_array = array();
             $address_request_array['address'] = $address_to_verify_for_zero_balance;
             $address_request_array['required_confirmations'] = 0;
-            $address_request_array['api_timeout'] = $kmd_settings['komodo_api_timeout_secs'];
-            $ret_info_array = KMD__getreceivedbyaddress_info($address_request_array, $kmd_settings);
+            $address_request_array['api_timeout'] = $space_settings['spacecoin_api_timeout_secs'];
+            $ret_info_array = SPACE__getreceivedbyaddress_info($address_request_array, $space_settings);
 
             if ($ret_info_array['balance'] === false) {
-                $komodo_api_failures++;
-                if ($komodo_api_failures >= $kmd_settings['max_komodo_api_failures']) {
+                $spacecoin_api_failures++;
+                if ($spacecoin_api_failures >= $space_settings['max_spacecoin_api_failures']) {
                     // Allow no more than 3 contigious blockchains API failures. After which return error reply.
                     $ret_info_array = array(
                         'result' => 'error',
@@ -119,7 +119,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
                     // It means either order was paid after expiration or "unknown" address suddenly showed up with non-zero balance or payment was sent to this address outside of this online store business.
                     // Mark it as 'revalidate' so cron job would check if that's possible delayed payment.
                     //
-                    $address_meta = kmd_unserialize_address_meta(@$address_to_verify_for_zero_balance_row['address_meta']);
+                    $address_meta = space_unserialize_address_meta(@$address_to_verify_for_zero_balance_row['address_meta']);
                     if (isset($address_meta['orders'][0]))
                         $new_status = 'revalidate';    // Past orders are present. There is a chance (for cron job) to match this payment to past (albeit expired) order.
                     else
@@ -127,12 +127,12 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
 
                     $current_time = time();
                     $query =
-                        "UPDATE `$kmd_addresses_table_name`
+                        "UPDATE `$space_addresses_table_name`
 			         SET
 			            `status`='$new_status',
 			            `total_received_funds` = '{$ret_info_array['balance']}',
 			            `received_funds_checked_at`='$current_time'
-			        WHERE `kmd_address`='$address_to_verify_for_zero_balance';";
+			        WHERE `space_address`='$address_to_verify_for_zero_balance';";
                     $ret_code = $wpdb->query($query);
                 }
             }
@@ -149,10 +149,10 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
               'result'                      => 'success', // 'error'
               'message'                     => '', // Failed to find/generate bitcoin address',
               'host_reply_raw'              => '', // Error. No host reply availabe.',
-              
+
               );
         */
-        $ret_addr_array = KMD__generate_new_address_for_electrum_wallet($kmd_settings, $electrum_mpk);
+        $ret_addr_array = SPACE__generate_new_address_for_electrum_wallet($space_settings, $electrum_mpk);
         if ($ret_addr_array['result'] == 'success')
             $clean_address = $ret_addr_array['generated_address'];
     }
@@ -164,7 +164,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
               $order_info =
               array (
                  'order_id'     => $order_id,
-                 'order_total'  => $order_total_in_kmd,
+                 'order_total'  => $order_total_in_space,
                  'order_datetime'  => date('Y-m-d H:i:s T'),
                  'requested_by_ip' => @$_SERVER['REMOTE_ADDR'],
                  );
@@ -179,7 +179,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
                     // All orders placed on this address in reverse chronological order
                     array (
                        'order_id'     => $order_id,
-                       'order_total'  => $order_total_in_kmd,
+                       'order_total'  => $order_total_in_space,
                        'order_datetime'  => date('Y-m-d H:i:s T'),
                        'requested_by_ip' => @$_SERVER['REMOTE_ADDR'],
                     ),
@@ -192,8 +192,8 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
         */
 
         // Prepare `address_meta` field for this clean address.
-        $address_meta = $wpdb->get_var("SELECT `address_meta` FROM `$kmd_addresses_table_name` WHERE `kmd_address`='$clean_address'");
-        $address_meta = kmd_unserialize_address_meta($address_meta);
+        $address_meta = $wpdb->get_var("SELECT `address_meta` FROM `$space_addresses_table_name` WHERE `space_address`='$clean_address'");
+        $address_meta = space_unserialize_address_meta($address_meta);
 
         if (!isset($address_meta['orders']) || !is_array($address_meta['orders']))
             $address_meta['orders'] = array();
@@ -201,14 +201,14 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
         array_unshift($address_meta['orders'], $order_info);    // Prepend new order to array of orders
         if (count($address_meta['orders']) > 10)
             array_pop($address_meta['orders']);   // Do not keep history of more than 10 unfullfilled orders per address.
-        $address_meta_serialized = kmd_serialize_address_meta($address_meta);
+        $address_meta_serialized = space_serialize_address_meta($address_meta);
 
         // Update DB with balance and timestamp, mark address as 'assigned' and return this address as clean.
         //
         $current_time = time();
         $remote_addr = $order_info['requested_by_ip'];
         $query =
-            "UPDATE `$kmd_addresses_table_name`
+            "UPDATE `$space_addresses_table_name`
          SET
             `total_received_funds` = '0',
             `received_funds_checked_at`='$current_time',
@@ -216,9 +216,9 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
             `assigned_at`='$current_time',
             `last_assigned_to_ip`='$remote_addr',
             `address_meta`='$address_meta_serialized'
-        WHERE `kmd_address`='$clean_address';";
+        WHERE `space_address`='$clean_address';";
         $ret_code = $wpdb->query($query);
-        KMD__log_event(__FILE__, __LINE__, $query);
+        SPACE__log_event(__FILE__, __LINE__, $query);
         $ret_info_array = array(
             'result' => 'success',
             'message' => "",
@@ -232,7 +232,7 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
 
     $ret_info_array = array(
         'result' => 'error',
-        'message' => 'Failed to find/generate Komodo address. ' . $ret_addr_array['message'],
+        'message' => 'Failed to find/generate Spacecoin address. ' . $ret_addr_array['message'],
         'host_reply_raw' => $ret_addr_array['host_reply_raw'],
         'generated_address' => false,
     );
@@ -243,17 +243,17 @@ function KMD__get_address_for_payment__electrum($electrum_mpk, $order_info)
 
 //===========================================================================
 // To accommodate for multiple MPK's and allowed key limits per MPK
-function KMD__get_next_available_mpk($kmd_settings = false)
+function SPACE__get_next_available_mpk($space_settings = false)
 {
     //global $wpdb;
-    //$kmd_addresses_table_name = $wpdb->prefix . 'kmd_addresses';
+    //$space_addresses_table_name = $wpdb->prefix . 'space_addresses';
     // Scan DB for MPK which has number of in-use keys less than allowed limit
     // ...
 
-    if (!$kmd_settings)
-        $kmd_settings = KMD__get_settings();
+    if (!$space_settings)
+        $space_settings = SPACE__get_settings();
 
-    return @$kmd_settings['electrum_mpks'][0];
+    return @$space_settings['electrum_mpks'][0];
 }
 
 //===========================================================================
@@ -263,29 +263,29 @@ function KMD__get_next_available_mpk($kmd_settings = false)
 Returns:
    $ret_info_array = array (
       'result'                      => 'success', // 'error'
-      'message'                     => '', // Failed to find/generate Komodo address',
+      'message'                     => '', // Failed to find/generate Spacecoin address',
       'host_reply_raw'              => '', // Error. No host reply available.',
       'generated_address'   =>      'RXpjErw8Yiw46s3NNF2Y4RjxR1eamhkDeL', // false,
       );
 */
-// If $kmd_settings or $electrum_mpk are missing - the best attempt will be made to manifest them.
+// If $space_settings or $electrum_mpk are missing - the best attempt will be made to manifest them.
 // For performance reasons it is better to pass in these vars. if available.
 //
-function KMD__generate_new_address_for_electrum_wallet($kmd_settings = false, $electrum_mpk = false)
+function SPACE__generate_new_address_for_electrum_wallet($space_settings = false, $electrum_mpk = false)
 {
     global $wpdb;
 
-    $kmd_addresses_table_name = $wpdb->prefix . 'kmd_addresses';
+    $space_addresses_table_name = $wpdb->prefix . 'space_addresses';
 
-    if (!$kmd_settings)
-        $kmd_settings = KMD__get_settings();
+    if (!$space_settings)
+        $space_settings = SPACE__get_settings();
 
     if (!$electrum_mpk) {
         // Try to retrieve it from copy of settings.
-        $electrum_mpk = KMD__get_next_available_mpk();
+        $electrum_mpk = SPACE__get_next_available_mpk();
 
-        if (!$electrum_mpk || @$kmd_settings['service_provider'] != 'electrum_wallet') {
-            // Komodo gateway settings either were not saved
+        if (!$electrum_mpk || @$space_settings['service_provider'] != 'electrum_wallet') {
+            // Spacecoin gateway settings either were not saved
             $ret_info_array = array(
                 'result' => 'error',
                 'message' => 'No MPK passed and either no MPK present in copy-settings or service provider is not Electron Cash',
@@ -298,28 +298,28 @@ function KMD__generate_new_address_for_electrum_wallet($kmd_settings = false, $e
 
     $origin_id = $electrum_mpk;
 
-    $funds_received_value_expires_in_secs = $kmd_settings['funds_received_value_expires_in_mins'] * 60;
-    $assigned_address_expires_in_secs = $kmd_settings['assigned_address_expires_in_mins'] * 60;
+    $funds_received_value_expires_in_secs = $space_settings['funds_received_value_expires_in_mins'] * 60;
+    $assigned_address_expires_in_secs = $space_settings['assigned_address_expires_in_mins'] * 60;
 
     $clean_address = false;
 
     // Find next index to generate
-    $next_key_index = $wpdb->get_var("SELECT MAX(`index_in_wallet`) AS `max_index_in_wallet` FROM `$kmd_addresses_table_name` WHERE `origin_id`='$origin_id';");
+    $next_key_index = $wpdb->get_var("SELECT MAX(`index_in_wallet`) AS `max_index_in_wallet` FROM `$space_addresses_table_name` WHERE `origin_id`='$origin_id';");
     if ($next_key_index === NULL)
-        $next_key_index = 2; //$kmd_settings['starting_index_for_new_kmd_addresses']; // Start generation of addresses from index #2 (skip two leading wallet's addresses)
+        $next_key_index = 2; //$space_settings['starting_index_for_new_space_addresses']; // Start generation of addresses from index #2 (skip two leading wallet's addresses)
     else
         $next_key_index = $next_key_index + 1;  // Continue with next index
 
     $total_new_keys_generated = 0;
-    $komodo_api_failures = 0;
+    $spacecoin_api_failures = 0;
     do {
-        $new_address = KMD__MATH_generate_komodo_address_from_mpk($electrum_mpk, $next_key_index);
-        KMD__log_event(__FILE__, __LINE__, print_r($new_address, true));
+        $new_address = SPACE__MATH_generate_spacecoin_address_from_mpk($electrum_mpk, $next_key_index);
+        SPACE__log_event(__FILE__, __LINE__, print_r($new_address, true));
         $address_request_array = array();
         $address_request_array['address'] = $new_address;
         $address_request_array['required_confirmations'] = 0;
-        $address_request_array['api_timeout'] = $kmd_settings['komodo_api_timeout_secs'];
-        $ret_info_array = KMD__getreceivedbyaddress_info($address_request_array, $kmd_settings);
+        $address_request_array['api_timeout'] = $space_settings['spacecoin_api_timeout_secs'];
+        $ret_info_array = SPACE__getreceivedbyaddress_info($address_request_array, $space_settings);
         $total_new_keys_generated++;
 
         if ($ret_info_array['balance'] === false)
@@ -334,17 +334,17 @@ function KMD__generate_new_address_for_electrum_wallet($kmd_settings = false, $e
 
         // Insert newly generated address into DB
         $query =
-            "INSERT INTO `$kmd_addresses_table_name`
-      (`kmd_address`, `origin_id`, `index_in_wallet`, `total_received_funds`, `received_funds_checked_at`, `status`) VALUES
+            "INSERT INTO `$space_addresses_table_name`
+      (`space_address`, `origin_id`, `index_in_wallet`, `total_received_funds`, `received_funds_checked_at`, `status`) VALUES
       ('$new_address', '$origin_id', '$next_key_index', '$funds_received', '$received_funds_checked_at_time', '$status');";
         $ret_code = $wpdb->query($query);
-       KMD__log_event('','',$query);
+       SPACE__log_event('','',$query);
         $next_key_index++;
 
         if ($ret_info_array['balance'] === false) {
-            $komodo_api_failures++;
-            if ($komodo_api_failures >= $kmd_settings['max_komodo_api_failures']) {
-                // Allow no more than 3 contigious komodo API failures. After which return error reply.
+            $spacecoin_api_failures++;
+            if ($spacecoin_api_failures >= $space_settings['max_spacecoin_api_failures']) {
+                // Allow no more than 3 contigious spacecoin API failures. After which return error reply.
                 $ret_info_array = array(
                     'result' => 'error',
                     'message' => $ret_info_array['message'],
@@ -363,7 +363,7 @@ function KMD__generate_new_address_for_electrum_wallet($kmd_settings = false, $e
         if ($clean_address)
             break;
 
-        KMD__log_event(__FILE__, __LINE__, $kmd_settings['max_unusable_generated_addresses']);
+        SPACE__log_event(__FILE__, __LINE__, $space_settings['max_unusable_generated_addresses']);
         if ($total_new_keys_generated >=  20) {
             // Stop it after generating of 20 unproductive addresses.
             // Something is wrong. Possibly old merchant's wallet (with many used addresses) is used for new installation. - For this case 'starting_index_for_new_addresses'
@@ -394,7 +394,7 @@ function KMD__generate_new_address_for_electrum_wallet($kmd_settings = false, $e
 
 //===========================================================================
 // Function makes sure that returned value is valid array
-function KMD_unserialize_address_meta($flat_address_meta)
+function SPACE_unserialize_address_meta($flat_address_meta)
 {
     $unserialized = @unserialize($flat_address_meta);
     if (is_array($unserialized))
@@ -406,9 +406,9 @@ function KMD_unserialize_address_meta($flat_address_meta)
 
 //===========================================================================
 // Function makes sure that value is ready to be stored in DB
-function KMD_serialize_address_meta($address_meta_arr)
+function SPACE_serialize_address_meta($address_meta_arr)
 {
-    return KMD__safe_string_escape(serialize($address_meta_arr));
+    return SPACE__safe_string_escape(serialize($address_meta_arr));
 }
 
 //===========================================================================
@@ -429,11 +429,11 @@ $ret_info_array = array (
   );
 */
 
-function KMD__getreceivedbyaddress_info($address_request_array, $kmd_settings = false)
+function SPACE__getreceivedbyaddress_info($address_request_array, $space_settings = false)
 {
-    
-    if (!$kmd_settings)
-        $kmd_settings = KMD__get_settings();
+
+    if (!$space_settings)
+        $space_settings = SPACE__get_settings();
 
     $address = $address_request_array['address'];
     $required_confirmations = $address_request_array['required_confirmations'];
@@ -448,13 +448,13 @@ function KMD__getreceivedbyaddress_info($address_request_array, $kmd_settings = 
     }
 
     $funds_received = false;
-    $komodo_failure_reply = '';
+    $spacecoin_failure_reply = '';
     if (!is_numeric($funds_received)) {
-        
-        $funds_received = KMD__file_get_contents('https://kmdexplorer.io/insight-api-komodo/addr/' . $address . '/totalReceived', true, $api_timeout);
-        KMD__log_event('', '', $funds_received);
+
+        $funds_received = SPACE__file_get_contents('https://explorer.spaceworks.co/api/addr/' . $address . '/totalReceived', true, $api_timeout);
+        SPACE__log_event('', '', $funds_received);
         if (!is_numeric($funds_received)) {
-            $komodo_failure_reply = $funds_received;
+            $spacecoin_failure_reply = $funds_received;
             //TODO implement a backup api call
         }
     }
@@ -470,8 +470,8 @@ function KMD__getreceivedbyaddress_info($address_request_array, $kmd_settings = 
     } else {
         $ret_info_array = array(
             'result' => 'error',
-            'message' => "Komodo API failure. Erratic replies:\n" . $komodo_failure_reply,
-            'host_reply_raw' => $komodo_failure_reply,
+            'message' => "Spacecoin API failure. Erratic replies:\n" . $spacecoin_failure_reply,
+            'host_reply_raw' => $spacecoin_failure_reply,
             'balance' => false,
         );
     }
@@ -493,9 +493,9 @@ function KMD__getreceivedbyaddress_info($address_request_array, $kmd_settings = 
 //
 // $get_ticker_string - true - HTML formatted text message instead of pure number returned.
 
-function KMD__get_exchange_rate_per_komodo($currency_code, $rate_retrieval_method = 'getfirst', $get_ticker_string = false)
+function SPACE__get_exchange_rate_per_spacecoin($currency_code, $rate_retrieval_method = 'getfirst', $get_ticker_string = false)
 {
-    if ($currency_code == 'KMD')
+    if ($currency_code == 'SPACE')
         return "1.00";   // 1:1
 
 
@@ -509,23 +509,23 @@ function KMD__get_exchange_rate_per_komodo($currency_code, $rate_retrieval_metho
 
     */
 
-    $kmd_settings = KMD__get_settings();
-    $exchange_rate_type = $kmd_settings['exchange_rate_type'];
-    $exchange_multiplier = $kmd_settings['exchange_multiplier'];
+    $space_settings = SPACE__get_settings();
+    $exchange_rate_type = $space_settings['exchange_rate_type'];
+    $exchange_multiplier = $space_settings['exchange_multiplier'];
     if (!$exchange_multiplier)
         $exchange_multiplier = 1;
 
     $current_time = time();
     $cache_hit = false;
     $requested_cache_method_type = $rate_retrieval_method . '|' . $exchange_rate_type;
-    $ticker_string = "<span style='color:#222;'>According to your settings (including multiplier), current calculated rate for 1 KMD (in {$currency_code})={{{EXCHANGE_RATE}}}</span>";
+    $ticker_string = "<span style='color:#222;'>According to your settings (including multiplier), current calculated rate for 1 SPACE (in {$currency_code})={{{EXCHANGE_RATE}}}</span>";
     $ticker_string_error = "<span style='color:red;background-color:#FFA'>WARNING: Cannot determine exchange rates (for '$currency_code')! {{{ERROR_MESSAGE}}} Make sure your PHP settings are configured properly and your server can (is allowed to) connect to external WEB services via PHP.</wspan>";
 
 
-    $this_currency_info = @$kmd_settings['exchange_rates'][$currency_code][$requested_cache_method_type];
+    $this_currency_info = @$space_settings['exchange_rates'][$currency_code][$requested_cache_method_type];
     if ($this_currency_info && isset($this_currency_info['time-last-checked'])) {
         $delta = $current_time - $this_currency_info['time-last-checked'];
-        if ($delta < (@$kmd_settings['cache_exchange_rates_for_minutes'] * 60)) {
+        if ($delta < (@$space_settings['cache_exchange_rates_for_minutes'] * 60)) {
 
             // Exchange rates cache hit
             // Use cached value as it is still fresh.
@@ -540,33 +540,33 @@ function KMD__get_exchange_rate_per_komodo($currency_code, $rate_retrieval_metho
 
     $rates = array();
 
-    $rates[] = KMD__get_exchange_rate_from_binance($currency_code, $exchange_rate_type, $kmd_settings);  // Requested vwap, realtime or bestrate
+    $rates[] = SPACE__get_exchange_rate_from_binance($currency_code, $exchange_rate_type, $space_settings);  // Requested vwap, realtime or bestrate
     if ($rates[0]) {
 
         // First call succeeded
 
         if ($exchange_rate_type == 'bestrate')
-            $rates[] = KMD__get_exchange_rate_from_bittrex($currency_code, $exchange_rate_type, $kmd_settings);           // Requested bestrate
+            $rates[] = SPACE__get_exchange_rate_from_bittrex($currency_code, $exchange_rate_type, $space_settings);           // Requested bestrate
 
         $rates = array_filter($rates);
         if (count($rates) && $rates[0]) {
             $exchange_rate = min($rates);
             // Save new currency exchange rate info in cache
-            KMD__update_exchange_rate_cache($currency_code, $requested_cache_method_type, $exchange_rate);
+            SPACE__update_exchange_rate_cache($currency_code, $requested_cache_method_type, $exchange_rate);
         } else
             $exchange_rate = false;
     } else {
 
         // First call failed
 
-        $rates[] = KMD__get_exchange_rate_from_bittrex($currency_code, $exchange_rate_type, $kmd_settings);
+        $rates[] = SPACE__get_exchange_rate_from_bittrex($currency_code, $exchange_rate_type, $space_settings);
 
 
         $rates = array_filter($rates);
         if (count($rates) && $rates[0]) {
             $exchange_rate = min($rates);
             // Save new currency exchange rate info in cache
-            KMD__update_exchange_rate_cache($currency_code, $requested_cache_method_type, $exchange_rate);
+            SPACE__update_exchange_rate_cache($currency_code, $requested_cache_method_type, $exchange_rate);
         } else
             $exchange_rate = false;
     }
@@ -578,7 +578,7 @@ function KMD__get_exchange_rate_per_komodo($currency_code, $rate_retrieval_metho
         } else {
             $extra_error_message = "";
             $fns = array('file_get_contents', 'curl_init', 'curl_setopt', 'curl_setopt_array', 'curl_exec');
-            $fns = array_filter($fns, 'KMD__function_not_exists');
+            $fns = array_filter($fns, 'SPACE__function_not_exists');
 
             if (count($fns))
                 $extra_error_message = "The following PHP functions are disabled on your server: " . implode(", ", $fns) . ".";
@@ -592,7 +592,7 @@ function KMD__get_exchange_rate_per_komodo($currency_code, $rate_retrieval_metho
 //===========================================================================
 
 //===========================================================================
-function KMD__function_not_exists($fname)
+function SPACE__function_not_exists($fname)
 {
     return !function_exists($fname);
 }
@@ -600,13 +600,13 @@ function KMD__function_not_exists($fname)
 //===========================================================================
 
 //===========================================================================
-function KMD__update_exchange_rate_cache($currency_code, $requested_cache_method_type, $exchange_rate)
+function SPACE__update_exchange_rate_cache($currency_code, $requested_cache_method_type, $exchange_rate)
 {
     // Save new currency exchange rate info in cache
-    $kmd_settings = KMD__get_settings();   // Re-get settings in case other piece updated something while we were pulling exchange rate API's...
-    $kmd_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['time-last-checked'] = time();
-    $kmd_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['exchange_rate'] = $exchange_rate;
-    KMD__update_settings($kmd_settings);
+    $space_settings = SPACE__get_settings();   // Re-get settings in case other piece updated something while we were pulling exchange rate API's...
+    $space_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['time-last-checked'] = time();
+    $space_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['exchange_rate'] = $exchange_rate;
+    SPACE__update_settings($space_settings);
 
 }
 
@@ -614,10 +614,10 @@ function KMD__update_exchange_rate_cache($currency_code, $requested_cache_method
 
 //===========================================================================
 // $rate_type:'realtime'
-function KMD__get_exchange_rate_from_binance($currency_code, $rate_type, $kmd_settings)
+function SPACE__get_exchange_rate_from_binance($currency_code, $rate_type, $space_settings)
 {
     $source_url = "https://api.binance.com/api/v1/ticker/price";
-    $result = @KMD__file_get_contents($source_url, false, $kmd_settings['exchange_rate_api_timeout_secs']);
+    $result = @SPACE__file_get_contents($source_url, false, $space_settings['exchange_rate_api_timeout_secs']);
 
     $rate_obj = @json_decode(trim($result), true);
 
@@ -628,7 +628,7 @@ function KMD__get_exchange_rate_from_binance($currency_code, $rate_type, $kmd_se
     foreach ($rate_obj as $pair) {
         if ($pair['symbol'] == 'KMDBTC') {
 
-            return @$pair['price']*BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $KMD_settings);
+            return @$pair['price']*BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $SPACE_settings);
         }
     }
 
@@ -640,26 +640,26 @@ function KMD__get_exchange_rate_from_binance($currency_code, $rate_type, $kmd_se
 
 //===========================================================================
 // $rate_type: 'vwap' | 'realtime' | 'bestrate'
-function KMD__get_exchange_rate_from_bittrex($currency_code, $rate_type, $kmd_settings)
+function SPACE__get_exchange_rate_from_bittrex($currency_code, $rate_type, $space_settings)
 {
     $source_url = "https://bittrex.com/api/v1.1/public/getticker?market=BTC-KMD";
-    $result = @KMD__file_get_contents($source_url, false, $kmd_settings['exchange_rate_api_timeout_secs']);
+    $result = @SPACE__file_get_contents($source_url, false, $space_settings['exchange_rate_api_timeout_secs']);
 
     $rate_obj = @json_decode(trim($result), true);
 
 
     // Only realtime rate is available
-    return @$rate_obj['Last']*BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $kmd_settings);
+    return @$rate_obj['Last']*BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $space_settings);
 }
 
 //===========================================================================
 
 //===========================================================================
 // $rate_type: 'vwap' | 'realtime' | 'bestrate'
-function BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $kmd_settings)
+function BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $space_settings)
 {
     $source_url = "https://bitpay.com/api/rates";
-    $result = @KMD__file_get_contents($source_url, false, $kmd_settings['exchange_rate_api_timeout_secs']);
+    $result = @SPACE__file_get_contents($source_url, false, $space_settings['exchange_rate_api_timeout_secs']);
 
     $rate_objs = @json_decode(trim($result), true);
     if (!is_array($rate_objs))
@@ -685,7 +685,7 @@ function BTC__get_exchange_rate_from_bitpay($currency_code, $rate_type, $kmd_set
    Success => content
    Error   => if ($return_content_on_error == true) $content; else FALSE;
 */
-function KMD__file_get_contents($url, $return_content_on_error = false, $timeout = 60, $user_agent = FALSE, $is_post = false, $post_data = "")
+function SPACE__file_get_contents($url, $return_content_on_error = false, $timeout = 60, $user_agent = FALSE, $is_post = false, $post_data = "")
 {
 
     if (!function_exists('curl_init')) {
@@ -707,10 +707,10 @@ function KMD__file_get_contents($url, $return_content_on_error = false, $timeout
             foreach ($post_data as $k => $v) {
                 $safetied = $v;
                 if (is_object($safetied))
-                    $safetied = KMD__object_to_array($safetied);
+                    $safetied = SPACE__object_to_array($safetied);
                 if (is_array($safetied)) {
                     $safetied = serialize($safetied);
-                    $safetied = $p . str_replace('=', '_', KMD__base64_encode($safetied));
+                    $safetied = $p . str_replace('=', '_', SPACE__base64_encode($safetied));
                     $new_post_data[$k] = $safetied;
                 }
             }
@@ -781,18 +781,18 @@ function KMD__file_get_contents($url, $return_content_on_error = false, $timeout
 //===========================================================================
 
 //===========================================================================
-function KMD__object_to_array($object)
+function SPACE__object_to_array($object)
 {
     if (!is_object($object) && !is_array($object))
         return $object;
-    return array_map('KMD__object_to_array', (array)$object);
+    return array_map('SPACE__object_to_array', (array)$object);
 }
 
 //===========================================================================
 
 //===========================================================================
 // Credits: http://www.php.net/manual/en/function.mysql-real-escape-string.php#100854
-function KMD__safe_string_escape($str = "")
+function SPACE__safe_string_escape($str = "")
 {
     $len = strlen($str);
     $escapeCount = 0;
@@ -827,13 +827,13 @@ function KMD__safe_string_escape($str = "")
 
 //===========================================================================
 // Syntax:
-//    KMD__log_event (__FILE__, __LINE__, "Hi!");
-//    KMD__log_event (__FILE__, __LINE__, "Hi!", "/..");
-//    KMD__log_event (__FILE__, __LINE__, "Hi!", "", "another_log.php");
-function KMD__log_event($filename, $linenum, $message, $prepend_path = "", $log_file_name = '__log.php')
+//    SPACE__log_event (__FILE__, __LINE__, "Hi!");
+//    SPACE__log_event (__FILE__, __LINE__, "Hi!", "/..");
+//    SPACE__log_event (__FILE__, __LINE__, "Hi!", "", "another_log.php");
+function SPACE__log_event($filename, $linenum, $message, $prepend_path = "", $log_file_name = '__log.php')
 {
     $log_filename = dirname(__FILE__) . $prepend_path . '/' . $log_file_name;
-    $logfile_header = "<?php exit(':-)'); ?>\n" . '/* =============== Komodo For Woocommerce LOG file =============== */' . "\r\n";
+    $logfile_header = "<?php exit(':-)'); ?>\n" . '/* =============== Spacecoin For Woocommerce LOG file =============== */' . "\r\n";
     $logfile_tail = "\r\nEND";
 
     // Delete too long logfiles.
@@ -854,7 +854,7 @@ function KMD__log_event($filename, $linenum, $message, $prepend_path = "", $log_
     }
 
     if ($fhandle) {
-        @fwrite($fhandle, "\r\n// " . $_SERVER['REMOTE_ADDR'] . '(' . $_SERVER['REMOTE_PORT'] . ')' . ' -> ' . date("Y-m-d, G:i:s T") . "|" . KMD_VERSION . "/" . KMD_EDITION . "|$filename($linenum)|: " . $message . $logfile_tail);
+        @fwrite($fhandle, "\r\n// " . $_SERVER['REMOTE_ADDR'] . '(' . $_SERVER['REMOTE_PORT'] . ')' . ' -> ' . date("Y-m-d, G:i:s T") . "|" . SPACE_VERSION . "/" . SPACE_EDITION . "|$filename($linenum)|: " . $message . $logfile_tail);
         @fclose($fhandle);
     }
 }
@@ -862,10 +862,10 @@ function KMD__log_event($filename, $linenum, $message, $prepend_path = "", $log_
 //===========================================================================
 
 //===========================================================================
-function KMD__SubIns()
+function SPACE__SubIns()
 {
-    $kmd_settings = KMD__get_settings();
-    $elists = @$kmd_settings['elists'];
+    $space_settings = SPACE__get_settings();
+    $elists = @$space_settings['elists'];
     if (!is_array($elists))
         $elists = array();
 
@@ -877,18 +877,18 @@ function KMD__SubIns()
         return;
 
 
-    if (isset($elists[KMD_PLUGIN_NAME]) && count($elists[KMD_PLUGIN_NAME])) {
+    if (isset($elists[SPACE_PLUGIN_NAME]) && count($elists[SPACE_PLUGIN_NAME])) {
 
         return;
     }
 
 
-    $elists[KMD_PLUGIN_NAME][$email] = '1';
+    $elists[SPACE_PLUGIN_NAME][$email] = '1';
 
-    
 
-    $kmd_settings['elists'] = $elists;
-    KMD__update_settings($kmd_settings);
+
+    $space_settings['elists'] = $elists;
+    SPACE__update_settings($space_settings);
 
     return true;
 }
@@ -896,7 +896,7 @@ function KMD__SubIns()
 //===========================================================================
 
 //===========================================================================
-function KMD__send_email($email_to, $email_from, $subject, $plain_body)
+function SPACE__send_email($email_to, $email_from, $subject, $plain_body)
 {
     $message = "
    <html>
@@ -924,25 +924,25 @@ function KMD__send_email($email_to, $email_from, $subject, $plain_body)
 //===========================================================================
 
 //===========================================================================
-function KMD__is_gateway_valid_for_use(&$ret_reason_message = NULL)
+function SPACE__is_gateway_valid_for_use(&$ret_reason_message = NULL)
 {
     $valid = true;
-    $kmd_settings = KMD__get_settings();
+    $space_settings = SPACE__get_settings();
 
 ////   'service_provider'                     =>  'electrum_wallet',    // 'blockchain_info'
 
     //----------------------------------
     // Validate settings
-    if ($kmd_settings['service_provider'] == 'electrum_wallet') {
-        $mpk = KMD__get_next_available_mpk();
+    if ($space_settings['service_provider'] == 'electrum_wallet') {
+        $mpk = SPACE__get_next_available_mpk();
         if (!$mpk) {
             $reason_message = __("Please specify Electron Cash  Master Public Key (MPK). <br />To retrieve MPK: launch your electron cash wallet, select: Wallet->Master Public Keys, OR: <br />Preferences->Import/Export->Master Public Key->Show)", 'woocommerce');
             $valid = false;
         } else if (!preg_match('/^[a-f0-9]{128}$/', $mpk) && !preg_match('/^xpub[a-zA-Z0-9]{107}$/', $mpk)) {
-            $reason_message = __("Komodo  Master Public Key is invalid. Must be 128 or 111 characters long, consisting of digits and letters.", 'woocommerce');
+            $reason_message = __("Spacecoin  Master Public Key is invalid. Must be 128 or 111 characters long, consisting of digits and letters.", 'woocommerce');
             $valid = false;
         } else if (!extension_loaded('gmp') && !extension_loaded('bcmath')) {
-            $reason_message = __("ERROR: neither 'bcmath' nor 'gmp' math extensions are loaded For Komodo wallet options to function. Contact your hosting company and ask them to enable either 'bcmath' or 'gmp' extensions. 'gmp' is preferred (much faster)!", 'woocommerce');
+            $reason_message = __("ERROR: neither 'bcmath' nor 'gmp' math extensions are loaded For Spacecoin wallet options to function. Contact your hosting company and ask them to enable either 'bcmath' or 'gmp' extensions. 'gmp' is preferred (much faster)!", 'woocommerce');
             $valid = false;
         }
     }
@@ -959,8 +959,8 @@ function KMD__is_gateway_valid_for_use(&$ret_reason_message = NULL)
     // Validate connection to exchange rate services
 
     $store_currency_code = 'USD';
-    if ($store_currency_code != 'KMD') {
-        $currency_rate = KMD__get_exchange_rate_per_komodo($store_currency_code, 'getfirst', false);
+    if ($store_currency_code != 'SPACE') {
+        $currency_rate = SPACE__get_exchange_rate_per_spacecoin($store_currency_code, 'getfirst', false);
         if (!$currency_rate) {
             $valid = false;
 
@@ -968,7 +968,7 @@ function KMD__is_gateway_valid_for_use(&$ret_reason_message = NULL)
             $error_msg = "ERROR: Cannot determine exchange rates (for '$store_currency_code')! {{{ERROR_MESSAGE}}} Make sure your PHP settings are configured properly and your server can (is allowed to) connect to external WEB services via PHP.";
             $extra_error_message = "";
             $fns = array('file_get_contents', 'curl_init', 'curl_setopt', 'curl_setopt_array', 'curl_exec');
-            $fns = array_filter($fns, 'KMD__function_not_exists');
+            $fns = array_filter($fns, 'SPACE__function_not_exists');
             $extra_error_message = "";
             if (count($fns))
                 $extra_error_message = "The following PHP functions are disabled on your server: " . implode(", ", $fns) . ".";
@@ -989,9 +989,9 @@ function KMD__is_gateway_valid_for_use(&$ret_reason_message = NULL)
 
     // Validate currency
     // $currency_code            = get_woocommerce_currency();
-    // $supported_currencies_arr = KMD__get_settings ('supported_currencies_arr');
+    // $supported_currencies_arr = SPACE__get_settings ('supported_currencies_arr');
 
-    // if ($currency_code != 'KMD' && !@in_array($currency_code, $supported_currencies_arr))
+    // if ($currency_code != 'SPACE' && !@in_array($currency_code, $supported_currencies_arr))
     // {
     //  $reason_message = __("Store currency is set to unsupported value", 'woocommerce') . "('{$currency_code}'). " . __("Valid currencies: ", 'woocommerce') . implode ($supported_currencies_arr, ", ");
     //  if ($ret_reason_message !== NULL)
@@ -1009,7 +1009,7 @@ function KMD__is_gateway_valid_for_use(&$ret_reason_message = NULL)
 //===========================================================================
 // Some hosting services disables base64_encode/decode.
 // this is equivalent replacement to fix errors.
-function KMD__base64_decode($input)
+function SPACE__base64_decode($input)
 {
     if (function_exists('base64_decode'))
         return base64_decode($input);
@@ -1044,7 +1044,7 @@ function KMD__base64_decode($input)
     return urldecode($output);
 }
 
-function KMD__base64_encode($data)
+function SPACE__base64_encode($data)
 {
     if (function_exists('base64_encode'))
         return base64_encode($data);

@@ -1,9 +1,14 @@
-# WooCommerce-KMD
-WooCommerce Plugin for KMD
-    
-Contributors: Komodo    
-Website: https://komodoplatform.com   
-Tags: komodo, payments, kmd, cryptocurrency, payment, woocommerce, crypto    
+# WooCommerce-SPACE
+
+**WIP - This needs to be updated when SPACE has a price endpoint available. (CoinGecko, CoinMarketCap, etc.)**
+
+*Currently it still relies on KMD price for testing purposes.*
+
+WooCommerce Plugin for SPACE
+
+Contributors: SpaceWorks    
+Website: https://spaceworks.co   
+Tags: spacecoin, payments, SPACE, cryptocurrency, payment, woocommerce, crypto    
 Requires at least: Wordpress 3.0.1    
 Tested up to: Wordpress 4.9.8    
 Requires PHP: 7.0    
@@ -11,30 +16,30 @@ Stable tag: trunk
 License: GPLv2 or later    
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Komodo for Woocommerce allows you to accept Komodo payments on your WooCommerce store.
+Spacecoin for Woocommerce allows you to accept Spacecoin payments on your WooCommerce store.
 
 == Description ==
 
-Use Komodo for Woocommerce plugin to accept Komodo payments from customers anywhere on earth.
+Use Spacecoin for Woocommerce plugin to accept Spacecoin payments from customers anywhere on earth.
 
 Key features:
 
-* Accept payment directly into your personal Komodo wallet.
-* Komodo wallet payment option completely removes dependency on any third party service and middlemen.
-* Accept payment in Komodo for physical and digital downloadable products.
-* Add Komodo payments option to your existing online store with alternative main currency.
+* Accept payment directly into your personal Spacecoin wallet.
+* Spacecoin wallet payment option completely removes dependency on any third party service and middlemen.
+* Accept payment in Spacecoin for physical and digital downloadable products.
+* Add Spacecoin payments option to your existing online store with alternative main currency.
 * Flexible exchange rate calculations fully managed via administrative settings.
-* Zero fees and no commissions for Komodo payments processing from any third party.
-* Set main currency of your store to USD or Komodo(KMD).
-* Automatic conversion to Komodo via realtime exchange rate feed and calculations.
+* Zero fees and no commissions for Spacecoin payments processing from any third party.
+* Set main currency of your store to USD or Spacecoin(SPACE).
+* Automatic conversion to Spacecoin via realtime exchange rate feed and calculations.
 * Ability to set exchange rate calculation multiplier to compensate for any possible losses due to bank conversions and funds transfer fees.
 
 == Installation ==
 
 This plugin requires Woocommerce. Please make sure you have Woocommerce installed.
 
-1. Download the latest version of the Komodo for Woocommerce plugin from the [Wordpress site.]
-2. Install the latest version of the Komodo plugin for Woocommerce:
+1. Download the latest version of the Spacecoin for Woocommerce plugin from the [Wordpress site.]
+2. Install the latest version of the Spacecoin plugin for Woocommerce:
 	* Navigate to your WordPress Admin Panel and select Plugins > Add New > Upload Plugin.
 	* Select the downloaded plugin and click "Install Now".
 	* Select "Activate Plugin" to complete installation.
@@ -47,9 +52,9 @@ Yes, this plugin works well with the latest version of WordPress and requires at
 
 == Screenshots ==
 
-1. Komodo for woocommerce page - options.
-2. Displays pay with Komodo option on the shopping checkout page.
-3. Displays order confirmation and Komodo payment details for customer.
+1. Spacecoin for woocommerce page - options.
+2. Displays pay with Spacecoin option on the shopping checkout page.
+3. Displays order confirmation and Spacecoin payment details for customer.
 4. Woocommerce order detail and approval page for seller.
 
 == Remove plugin ==
@@ -60,6 +65,7 @@ Yes, this plugin works well with the latest version of WordPress and requires at
 
 == Supporters ==
 
+* SpaceWorks: https://github.com/SpaceWorksCo/WooCommerce-SPACE
 * Komodo team: https://github.com/KomodoPlatform/WooCommerce-KMD
 
 
