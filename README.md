@@ -10,7 +10,7 @@ Contributors: SpaceWorks
 Website: https://spaceworks.co   
 Tags: spacecoin, payments, SPACE, cryptocurrency, payment, woocommerce, crypto    
 Requires at least: Wordpress 3.0.1    
-Tested up to: Wordpress 4.9.8    
+Tested up to: Wordpress 5.7    
 Requires PHP: 7.0    
 Stable tag: trunk    
 License: GPLv2 or later    
@@ -24,7 +24,7 @@ Use Spacecoin for Woocommerce plugin to accept Spacecoin payments from customers
 
 Key features:
 
-* Accept payment directly into your personal Spacecoin wallet.
+* Accept payment directly into your personal Spacecoin Electrum wallet.
 * Spacecoin wallet payment option completely removes dependency on any third party service and middlemen.
 * Accept payment in Spacecoin for physical and digital downloadable products.
 * Add Spacecoin payments option to your existing online store with alternative main currency.
@@ -48,14 +48,7 @@ This plugin requires Woocommerce. Please make sure you have Woocommerce installe
 
 = Does this plugin work with newest WP version and also older versions? =
 
-Yes, this plugin works well with the latest version of WordPress and requires atleast WP 3.0.1
-
-== Screenshots ==
-
-1. Spacecoin for woocommerce page - options.
-2. Displays pay with Spacecoin option on the shopping checkout page.
-3. Displays order confirmation and Spacecoin payment details for customer.
-4. Woocommerce order detail and approval page for seller.
+Yes, this plugin works well with the latest version of WordPress and requires at least WP 3.0.1
 
 == Remove plugin ==
 

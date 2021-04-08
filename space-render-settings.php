@@ -165,7 +165,7 @@ function SPACE__render_general_settings_page_html ()
                   Select: Wallet -> Information to see the Master Public Key.
                 </li>
                 <li>
-                  Copy the long number string and paste it in this field.
+                  Copy the xpub string and paste it in this field.
                 </li>
                 <li>
                   Save changes.
