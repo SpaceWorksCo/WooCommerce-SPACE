@@ -230,7 +230,7 @@ function SPACE_cron_job_worker ($hardcron=false)
 	// ...
 
   //-----------------------------------------------------
-  // Pre-generate new spacecoin address for electron cash wallet
+  // Pre-generate new spacecoin address for spacecoin electrum wallet
 
   // Try to retrieve mpk from copy of settings.
   if ($hardcron)
@@ -239,7 +239,7 @@ function SPACE_cron_job_worker ($hardcron=false)
 
     if ($electrum_mpk && @$space_settings['service_provider'] == 'electrum_wallet')
     {
-      // Calculate number of unused addresses belonging to currently active electron cash wallet
+      // Calculate number of unused addresses belonging to currently active spacecoin electrum wallet
 
       $origin_id = $electrum_mpk;
 

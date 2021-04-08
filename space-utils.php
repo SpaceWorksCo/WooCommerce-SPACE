@@ -288,7 +288,7 @@ function SPACE__generate_new_address_for_electrum_wallet($space_settings = false
             // Spacecoin gateway settings either were not saved
             $ret_info_array = array(
                 'result' => 'error',
-                'message' => 'No MPK passed and either no MPK present in copy-settings or service provider is not Electron Cash',
+                'message' => 'No MPK passed and either no MPK present in copy-settings or service provider is not Spacecoin Electrum',
                 'host_reply_raw' => '',
                 'generated_address' => false,
             );
@@ -936,13 +936,13 @@ function SPACE__is_gateway_valid_for_use(&$ret_reason_message = NULL)
     if ($space_settings['service_provider'] == 'electrum_wallet') {
         $mpk = SPACE__get_next_available_mpk();
         if (!$mpk) {
-            $reason_message = __("Please specify Electron Cash  Master Public Key (MPK). <br />To retrieve MPK: launch your electron cash wallet, select: Wallet->Master Public Keys, OR: <br />Preferences->Import/Export->Master Public Key->Show)", 'woocommerce');
+            $reason_message = __("Please specify Spacecoin Electrum  Master Public Key (MPK). <br />To retrieve MPK: launch your spacecoin electrum wallet, select: Wallet -> Information", 'woocommerce');
             $valid = false;
         } else if (!preg_match('/^[a-f0-9]{128}$/', $mpk) && !preg_match('/^xpub[a-zA-Z0-9]{107}$/', $mpk)) {
-            $reason_message = __("Spacecoin  Master Public Key is invalid. Must be 128 or 111 characters long, consisting of digits and letters.", 'woocommerce');
+            $reason_message = __("Spacecoin Master Public Key is invalid. Must be 128 or 111 characters long, consisting of digits and letters.", 'woocommerce');
             $valid = false;
         } else if (!extension_loaded('gmp') && !extension_loaded('bcmath')) {
-            $reason_message = __("ERROR: neither 'bcmath' nor 'gmp' math extensions are loaded For Spacecoin wallet options to function. Contact your hosting company and ask them to enable either 'bcmath' or 'gmp' extensions. 'gmp' is preferred (much faster)!", 'woocommerce');
+            $reason_message = __("ERROR: neither 'bcmath' nor 'gmp' math extensions are loaded For Spacecoin Electrum wallet options to function. Contact your hosting company and ask them to enable either 'bcmath' or 'gmp' extensions. 'gmp' is preferred (much faster)!", 'woocommerce');
             $valid = false;
         }
     }

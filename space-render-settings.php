@@ -159,13 +159,13 @@ function SPACE__render_general_settings_page_html ()
             <p class="description">
               <ol class="description">
                 <li>
-                  Launch Spacecoin paper wallet and get Master Public Key value from xpub tab.
+                  Launch Spacecoin Electrum wallet.
                 </li>
                 <li>
-                  Enter seed to get xpub key.
+                  Select: Wallet -> Information to see the Master Public Key.
                 </li>
                 <li>
-                  Copy long number string and paste it in this field.
+                  Copy the long number string and paste it in this field.
                 </li>
                 <li>
                   Save changes.
